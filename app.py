@@ -54,7 +54,7 @@ def register_page():
     st.title("📝 Register Pengguna Baru")
 
     payUserID = st.text_input("PayUserID")
-    typeCard = st.selectbox("Jenis Kartu", ["bni", "brizzi", "dki", "emoney"])
+    typeCard = st.selectbox("Jenis Kartu", ["bni", "brizzi", "dki", "emoney","flazz","online"])
     userName = st.text_input("Nama")
     userSex = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
     userBirthYear = st.number_input("Tahun Lahir", min_value=1900, max_value=2025, value=2000)
