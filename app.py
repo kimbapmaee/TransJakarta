@@ -14,17 +14,6 @@ def load_data():
 df, users_df = load_data()
 
 # ==========================
-# Simpan Data ke Excel
-# ==========================
-def save_users_to_excel(df, users_df):
-    df_copy = df.copy()
-    df_copy = df_copy.drop(columns=['typeCard', 'userName', 'userSex', 'userBirthYear'], errors='ignore')
-    df_merged = pd.merge(df_copy, users_df, on='payUserID', how='left')
-    
-    with pd.ExcelWriter("TransJakarta_FP.xlsx", engine='openpyxl', mode='w') as writer:
-        df_merged.to_excel(writer, sheet_name="TransJakarta", index=False)
-
-# ==========================
 # Session states
 # ==========================
 if 'page' not in st.session_state:
@@ -71,7 +60,9 @@ def register_page():
     userBirthYear = st.number_input("Tahun Lahir", min_value=1900, max_value=2025, value=2000)
 
     if st.button("Daftar"):
-        if payUserID in st.session_state.users['payUserID'].values:
+        if not payUserID.isdigit() or len(payUserID) != 12:
+            st.error("PayUserID harus terdiri dari 12 digit angka.")
+        elif payUserID in st.session_state.users['payUserID'].values:
             st.error("PayUserID sudah terdaftar.")
         else:
             new_user = pd.DataFrame([{
@@ -82,7 +73,6 @@ def register_page():
                 "userBirthYear": userBirthYear
             }])
             st.session_state.users = pd.concat([st.session_state.users, new_user], ignore_index=True)
-            save_users_to_excel(st.session_state.df, st.session_state.users)
             st.success("Registrasi berhasil!")
             go_to('login')
 
@@ -137,6 +127,7 @@ def history_page(df):
     st.write(f"**Jenis Kelamin**: {user['userSex']}")
     st.write(f"**Tahun Lahir**: {user['userBirthYear']}")
 
+    # tampilkan hanya kolom-kolom yang tersedia
     history = df[df['payUserID'] == user_id][['transID', 'routeID', 'transDate', 'duration', 'direction']]
     if history.empty:
         st.warning("Tidak ada riwayat perjalanan.")
