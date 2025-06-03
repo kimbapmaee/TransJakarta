@@ -1,6 +1,5 @@
 import streamlit as st 
 import pandas as pd
-from openpyxl import load_workbook
 
 # ==========================
 # Load Data
@@ -9,24 +8,10 @@ from openpyxl import load_workbook
 def load_data():
     df = pd.read_excel("TransJakarta_FP.xlsx", sheet_name="TransJakarta")  
     df['payUserID'] = df['payUserID'].astype(str)
-    
-    # Coba load sheet Users, kalau tidak ada buat kosong
-    try:
-        users_df = pd.read_excel("TransJakarta_FP.xlsx", sheet_name="Users")
-        users_df['payUserID'] = users_df['payUserID'].astype(str)
-    except:
-        users_df = df[['payUserID', 'typeCard', 'userName', 'userSex', 'userBirthYear']].drop_duplicates()
-    
+    users_df = df[['payUserID', 'typeCard', 'userName', 'userSex', 'userBirthYear']].drop_duplicates()
     return df, users_df
 
 df, users_df = load_data()
-
-# ==========================
-# Simpan Data ke Sheet "Users"
-# ==========================
-def save_users_to_excel(users_df):
-    with pd.ExcelWriter("TransJakarta_FP.xlsx", engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        users_df.to_excel(writer, sheet_name="Users", index=False)
 
 # ==========================
 # Session states
@@ -69,13 +54,15 @@ def register_page():
     st.title("📝 Register Pengguna Baru")
 
     payUserID = st.text_input("PayUserID")
-    typeCard = st.text_input("Jenis Kartu")
+    typeCard = st.selectbox("Jenis Kartu", ["bni", "brizzi", "dki", "emoney"])
     userName = st.text_input("Nama")
     userSex = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
     userBirthYear = st.number_input("Tahun Lahir", min_value=1900, max_value=2025, value=2000)
 
     if st.button("Daftar"):
-        if payUserID in st.session_state.users['payUserID'].values:
+        if not payUserID.isdigit() or len(payUserID) != 12:
+            st.error("PayUserID harus terdiri dari 12 digit angka.")
+        elif payUserID in st.session_state.users['payUserID'].values:
             st.error("PayUserID sudah terdaftar.")
         else:
             new_user = pd.DataFrame([{
@@ -86,7 +73,6 @@ def register_page():
                 "userBirthYear": userBirthYear
             }])
             st.session_state.users = pd.concat([st.session_state.users, new_user], ignore_index=True)
-            save_users_to_excel(st.session_state.users)
             st.success("Registrasi berhasil!")
             go_to('login')
 
@@ -141,6 +127,7 @@ def history_page(df):
     st.write(f"**Jenis Kelamin**: {user['userSex']}")
     st.write(f"**Tahun Lahir**: {user['userBirthYear']}")
 
+    # tampilkan hanya kolom-kolom yang tersedia
     history = df[df['payUserID'] == user_id][['transID', 'routeID', 'transDate', 'duration', 'direction']]
     if history.empty:
         st.warning("Tidak ada riwayat perjalanan.")
